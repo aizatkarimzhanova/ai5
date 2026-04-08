@@ -19,7 +19,7 @@ def film_detail_api_view(request, id):
 @api_view(['GET'])
 def film_list_api_view(request):
     #1 collect all films
-    films = Film.objects.all()
+    films = Film.objects.select_related('director').prefetch_related('reviews', 'genres').all()
     #2 serialiozer data
     list_film = FilmListSerializers(films, many=True).data # .data-превращает это в наши данные
     #3 return response
