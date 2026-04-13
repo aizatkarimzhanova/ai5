@@ -5,22 +5,69 @@ from .models import Film
 from .serializers import FilmListSerializers, FilmDetailSerializers
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def film_detail_api_view(request, id):
     try:
         film = Film.objects.get(id=id)
     except:
         return Response(status=status.HTTP_404_NOT_FOUND)
-    data = FilmDetailSerializers(film, many=False).data
-    return Response(data=data)
+    
+    if request.method == 'GET':
+        data = FilmDetailSerializers(film, many=False).data
+        return Response(data=data)
+    
+    elif request.method == 'DELETE':
+        film.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    elif request.method == 'PUT':
+        film.title = request.data.get('title')
+        film.text = request.data.get('text')
+        film.release_year = request.data.get('release_year')
+        film.rating = request.data.get('rating')
+        film.is_hit = request.data.get('is_hit')
+        film.director_id = request.data.get('director_id')
+        film.genres.set(request.data.get('genres'))
+        film.save()
+        return Response(status=status.HTTP_201_CREATED,
+                        data=FilmDetailSerializers(film).data)
 
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def film_list_api_view(request):
-    #1 collect all films
-    films = Film.objects.select_related('director').prefetch_related('reviews', 'genres').all()
-    #2 serialiozer data
-    list_film = FilmListSerializers(films, many=True).data # .data-превращает это в наши данные
-    #3 return response
-    return Response(data=list_film, status=status.HTTP_200_OK)
+
+    if request.method == 'GET':    
+        #1 collect all films
+        films = Film.objects.select_related('director').prefetch_related('reviews', 'genres').all()
+        #2 serialiozer data
+        list_film = FilmListSerializers(films, many=True).data # .data-превращает это в наши данные
+        #3 return response
+        return Response(data=list_film, status=status.HTTP_200_OK)
+    
+    elif request.method == 'POST':
+        # 1 recive data-получить данных
+        title = request.data.get('title')
+        text = request.data.get('text')
+        release_year = request.data.get('release_year')
+        rating = request.data.get('rating')
+        is_hit = request.data.get('is_hit')
+        director_id = request.data.get('director_id')
+        genres = request.data.get('genres')
+        # 2 create film
+        # параметр - значение
+        film = Film.objects.create(
+            title=title,
+            text=text,
+            release_year=release_year,
+            rating=rating,
+            is_hit=is_hit,
+            director_id=director_id
+        )
+        film.genres.set(genres)
+        film.save()
+        # 3 return response
+        return Response(status=status.HTTP_201_CREATED,data=FilmDetailSerializers(film).data)
+        #почему здес дата у говорить что мы отдаем какую ту часть данных но почему
+        #во могих случеав клиент спросить айди(data={'id':film.id}),
+        #в редких случаях отдается все данные(data=FilmDetailSerializers(film).data)

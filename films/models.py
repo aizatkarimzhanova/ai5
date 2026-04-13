@@ -16,6 +16,9 @@ class Genre(models.Model):
 
 
 class Film(models.Model):
+    #идеясы бир режжисердун эти аты окшош фильми болбойт
+    # class Meta:
+    #     unique_together = ['title', 'director']
     title = models.CharField(max_length=100)
     text = models.TextField(null=True, blank=True)
     release_year = models.IntegerField()
@@ -23,7 +26,7 @@ class Film(models.Model):
     is_hit = models.BooleanField(default=True)
     created = models. DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    director = models.ForeignKey(Director, on_delete=models.CASCADE, null=True)
+    director = models.ForeignKey(Director, on_delete=models.CASCADE, null=True) # director_id - потому что в таблице сохраняется его айди
     genres = models.ManyToManyField(Genre, blank=True)
 
 
