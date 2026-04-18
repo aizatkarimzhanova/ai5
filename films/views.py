@@ -1,8 +1,9 @@
+from django.db import transaction
 from rest_framework.decorators import api_view  # POST GET 
 from rest_framework.response import Response   # return Response
 from rest_framework import status
 from .models import Film
-from .serializers import FilmListSerializers, FilmDetailSerializers
+from .serializers import FilmListSerializers, FilmDetailSerializers, FilmValidateSerializer
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -46,26 +47,34 @@ def film_list_api_view(request):
         return Response(data=list_film, status=status.HTTP_200_OK)
     
     elif request.method == 'POST':
+        # 0 validation(existing(существует ли), typing(типы данных), extra)
+        serializer = FilmValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors) # тут получаем ошибки
+        
+        # тут уже берем проверенных данных(FilmValidateSerializer)
         # 1 recive data-получить данных
-        title = request.data.get('title')
-        text = request.data.get('text')
-        release_year = request.data.get('release_year')
-        rating = request.data.get('rating')
-        is_hit = request.data.get('is_hit')
-        director_id = request.data.get('director_id')
-        genres = request.data.get('genres')
+        title = serializer.validated_data.get('title')
+        text = serializer.validated_data.get('text')
+        release_year = serializer.validated_data.get('release_year')
+        rating = serializer.validated_data.get('rating')
+        is_hit = serializer.validated_data.get('is_hit')
+        director_id = serializer.validated_data.get('director_id')
+        genres = serializer.validated_data.get('genres')
         # 2 create film
         # параметр - значение
-        film = Film.objects.create(
-            title=title,
-            text=text,
-            release_year=release_year,
-            rating=rating,
-            is_hit=is_hit,
-            director_id=director_id
-        )
-        film.genres.set(genres)
-        film.save()
+        # transaction.atomic - если какой то из данных будет неправильно то объект не создастса
+        with transaction.atomic():
+            film = Film.objects.create(
+                title=title,
+                text=text,
+                release_year=release_year,
+                rating=rating,
+                is_hit=is_hit,
+                director_id=director_id
+            )
+            film.genres.set(genres)
+            film.save()
         # 3 return response
         return Response(status=status.HTTP_201_CREATED,data=FilmDetailSerializers(film).data)
         #почему здес дата у говорить что мы отдаем какую ту часть данных но почему
