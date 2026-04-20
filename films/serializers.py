@@ -2,12 +2,25 @@ from rest_framework import serializers
 from .models import Film, Director, Genre
 from rest_framework.exceptions import ValidationError
 
+class GenreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Genre
+        fields = '__all__'
+
+
+
 #2 [2] method fake serializator
 #2 (ManyToMany)если хотим получить список то фейк сериализатор не моможет нужно написать свою функцию [3]
 class DirectorSerializator(serializers.ModelSerializer):
     class Meta:
         model = Director
         fields = 'id fio'.split()
+
+class DirectorCreateSerializator(serializers.ModelSerializer):
+    class Meta:
+        model = Director
+        fields = 'id fio birthday'.split()
+
 
 class FilmListSerializers(serializers.ModelSerializer):
     director = DirectorSerializator(many=False)
